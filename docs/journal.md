@@ -18,3 +18,20 @@
 
 ### Temps passé
 -
+
+## Partie B.1 — Justification du partitionnement
+
+**1. Pourquoi séparer /var et /var/log de / ?**
+Les journaux grossissent sans limite. S'ils sont sur /, un disque plein bloque tout le système (services qui plantent, connexion impossible). Exemple : une application en erreur qui écrit en boucle dans ses logs, ou une attaque par force brute SSH qui remplit /var/log/auth.log. Avec /var/log séparé, seul ce volume sature et le système continue de fonctionner.
+
+**2. Pourquoi /boot reste une partition classique ?**
+Au démarrage, GRUB doit lire /boot pour charger le noyau avant que LVM soit actif. Une partition simple reste lisible même si LVM pose problème, ce qui permet de démarrer et de réparer.
+
+**3. Pourquoi 2 Gio de swap pour 2 Gio de RAM ?**
+Sans swap, une saturation mémoire fait tuer des processus par le noyau (OOM killer). Avec 8 Gio, la machine ne plante pas mais devient inutilisable car le disque est beaucoup plus lent que la RAM. 1x la RAM est un filet de sécurité raisonnable pour absorber un pic.
+
+**4. Pourquoi ne pas allouer tout le disque ?**
+Avec LVM, agrandir un volume est simple et se fait à chaud, alors que réduire est risqué (impossible en XFS). L'espace libre dans vg_sys permet d'agrandir le volume qui en aura besoin, au moment voulu (TP 2).
+
+**5. Quel volume agrandir en premier et comment ?**
+lv_log (/var/log), le plus exposé à la saturation. Opération : `lvextend` pour agrandir le volume logique puis agrandissement du système de fichiers (`xfs_growfs` ou `resize2fs`), ou directement `lvextend -r`, sans démontage donc sans coupure de service.
