@@ -1,0 +1,60 @@
+[jcandelariasureta@rhel9-lab ~]$ {
+echo "=== MACHINE : $(hostname) ==="
+echo "=== DATE : $(date -Is) ==="
+for cmd in "lsblk -f" "df -hT" "swapon --show" "findmnt --target /var/log" \
+           "sudo pvs" "sudo vgs" "sudo lvs"; do
+  echo; echo "\$ $cmd"; eval $cmd
+done
+} > ~/lsblk-rhel9-lab.txt 2>&1
+cat ~/lsblk-rhel9-lab.txt
+=== MACHINE : rhel9-lab ===
+=== DATE : 2026-10-04T06:10:21+02:00 ===
+
+$ lsblk -f
+NAME               FSTYPE      FSVER    LABEL UUID                                   FSAVAIL FSUSE% MOUNTPOINTS
+sda                                                                                                 
+├─sda1             xfs                        6b97e2ca-91a0-4ad8-b1f3-0ba717ec1587    463,8M    52% /boot
+└─sda2             LVM2_member LVM2 001       WfpERZ-I6K1-qI36-k9XE-6q2d-ETJV-ebOUO7                
+  ├─vg_sys-lv_root xfs                        cebee4c9-c4d6-4786-a311-757717288438     18,1G     9% /
+  ├─vg_sys-lv_swap swap        1              16d4f90f-300b-4713-aa22-9ef45d3847ff                  [SWAP]
+  ├─vg_sys-lv_var  xfs                        e8fa1328-4a14-4216-b29d-6034c0270cfd      8,7G    13% /var
+  ├─vg_sys-lv_home xfs                        c665af96-7de8-4445-a84f-de79b0a4e19c      4,9G     1% /home
+  └─vg_sys-lv_log  xfs                        9cf85509-cf7f-4f5c-ae73-7e087a86478d      4,9G     2% /var/log
+sr0                                                                                                 
+
+$ df -hT
+Sys. de fichiers           Type     Taille Utilisé Dispo Uti% Monté sur
+devtmpfs                   devtmpfs   832M       0  832M   0% /dev
+tmpfs                      tmpfs      854M       0  854M   0% /dev/shm
+tmpfs                      tmpfs      342M    4,8M  337M   2% /run
+/dev/mapper/vg_sys-lv_root xfs         20G    1,9G   19G  10% /
+/dev/sda1                  xfs        960M    497M  464M  52% /boot
+/dev/mapper/vg_sys-lv_var  xfs         10G    1,3G  8,7G  13% /var
+/dev/mapper/vg_sys-lv_home xfs        5,0G     68M  4,9G   2% /home
+/dev/mapper/vg_sys-lv_log  xfs        5,0G     80M  4,9G   2% /var/log
+tmpfs                      tmpfs      171M       0  171M   0% /run/user/1000
+
+$ swapon --show
+NAME      TYPE      SIZE USED PRIO
+/dev/dm-1 partition   2G   0B   -2
+
+$ findmnt --target /var/log
+TARGET   SOURCE                    FSTYPE OPTIONS
+/var/log /dev/mapper/vg_sys-lv_log xfs    rw,relatime,seclabel,attr2,inode64,logbufs=8,logbsize=32k,noquota
+
+$ sudo pvs
+  PV         VG     Fmt  Attr PSize   PFree 
+  /dev/sda2  vg_sys lvm2 a--  <49,00g <7,00g
+
+$ sudo vgs
+  VG     #PV #LV #SN Attr   VSize   VFree 
+  vg_sys   1   5   0 wz--n- <49,00g <7,00g
+
+$ sudo lvs
+  LV      VG     Attr       LSize  Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  lv_home vg_sys -wi-ao----  5,00g                                                    
+  lv_log  vg_sys -wi-ao----  5,00g                                                    
+  lv_root vg_sys -wi-ao---- 20,00g                                                    
+  lv_swap vg_sys -wi-ao----  2,00g                                                    
+  lv_var  vg_sys -wi-ao---- 10,00g                                                    
+[jcandelariasureta@rhel9-lab ~]$ 
