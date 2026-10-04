@@ -108,7 +108,7 @@ Schéma réalisé avec l'installateur Anaconda, en mode personnalisé, schéma L
 4. **Image d'installation toujours attachée** à la VM après l'installation (`sr0` visible dans `lsblk`) : risque de redémarrer sur l'installateur. Correction dans Proxmox : lecteur CD/DVD passé à « Do not use any media ».
 
 ### Instantané
-- `apres-installation` : [à compléter une fois pris]
+- `apres-installation` : pris le 04/10, VM éteinte, après mises à jour et redémarrage. Point de retour avant le durcissement de la partie D.
 
 ### Temps passé
-- [à compléter]
+- 1h30
