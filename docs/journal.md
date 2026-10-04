@@ -35,3 +35,53 @@ Avec LVM, agrandir un volume est simple et se fait à chaud, alors que réduire 
 
 **5. Quel volume agrandir en premier et comment ?**
 lv_log (/var/log), le plus exposé à la saturation. Opération : `lvextend` pour agrandir le volume logique puis agrandissement du système de fichiers (`xfs_growfs` ou `resize2fs`), ou directement `lvextend -r`, sans démontage donc sans coupure de service.
+
+## Séance 1 — 02/10/2026
+
+### Partie A — Préparation de l'hyperviseur et des machines
+- rhel9-lab (ID 200) : seconde interface réseau absente au moment de l'installation (perdue lors d'un retour à l'instantané initial, pris avant son ajout). Ajoutée à chaud : `net1` sur `vmbr2`, VLAN 42, modèle VirtIO.
+- Interfaces finales : `net0` → `vmbr1` (NAT), `net1` → `vmbr2` VLAN 42 (lab-interne).
+- Intérêt de l'instantané `avant-installation` : revenir à une machine vierge, configurée mais jamais installée, en cas d'erreur d'installation. Il a servi pendant cette séance (voir incidents).
+
+### Partie B — Partitionnement LVM (rhel9-lab, Rocky Linux 9.8)
+Schéma réalisé avec l'installateur Anaconda, en mode personnalisé, schéma LVM :
+
+| Volume | Taille | Point de montage | Système de fichiers |
+|---|---|---|---|
+| sda1 | 1 Gio | /boot | xfs |
+| vg_sys-lv_root | 20 Gio | / | xfs |
+| vg_sys-lv_var | 10 Gio | /var | xfs |
+| vg_sys-lv_log | 5 Gio | /var/log | xfs |
+| vg_sys-lv_home | 5 Gio | /home | xfs |
+| vg_sys-lv_swap | 2 Gio | swap | swap |
+| espace libre vg_sys | ~7 Gio | — | réservé au TP 2 |
+
+- Table de partitions MSDOS, démarrage BIOS (SeaBIOS) : pas de partition EFI nécessaire.
+- Groupe de volumes `vg_sys` configuré avec la politique « Aussi grand que possible », pour que l'espace non alloué reste à l'intérieur du groupe.
+- Schéma contrôlé par l'enseignant avant écriture : [à compléter : oui / non, heure]
+
+### Partie C — Paramètres définis pendant l'installation
+- Profil : Minimal Install, sans ensemble facultatif
+- Nom d'hôte : `rhel9-lab`
+- Fuseau horaire : Europe/Paris, synchronisation réseau activée
+- Clavier : français
+- Réseau :
+  - `ens18` (NAT) : 192.168.2.20/24, passerelle 192.168.2.1, DNS 1.1.1.1
+  - `ens19` (lab-interne) : 10.42.0.20/24, sans passerelle (réseau isolé, la route par défaut passe uniquement par ens18)
+- Compte root : désactivé dès l'installation
+- Compte nominatif : `jcandelaria`, administrateur (membre du groupe wheel)
+
+### Incidents et corrections
+1. **Installation lancée avec le partitionnement automatique.** Seule la création de l'utilisateur avait été configurée ; Anaconda a appliqué ses valeurs par défaut (partitionnement automatique, pas de nom d'hôte ni de réseau). Correction : arrêt de la VM, retour à l'instantané `avant-installation`, réinstallation complète.
+2. **Disque trop petit pour le schéma imposé.** Le schéma totalise 43 Gio pour un disque de 30 Gio. Correction : disque agrandi à chaud de 30 à 50 Gio depuis Proxmox (Disk Action → Resize). Les tailles des volumes du sujet sont conservées, avec ~7 Gio libres dans vg_sys.
+3. **Nouvelle taille non prise en compte par l'installateur.** Malgré une nouvelle analyse des disques, Anaconda n'affichait que 30 Gio disponibles sur 50 (table de partitions lue avant l'agrandissement). Correction : redémarrage de la VM, l'installateur relit le disque à 50 Gio.
+4. **Volumes répartis dans deux groupes de volumes.** Le groupe créé par défaut s'appelait `rlm`, avec une politique de taille automatique : l'espace libre restait hors du groupe, et après renommage seul `lv_root` était dans `vg_sys`, les autres volumes étant restés dans `rlm`. Correction : groupe renommé `vg_sys`, politique « Aussi grand que possible », puis chaque volume rattaché manuellement à `vg_sys`. Vérification dans le résumé des changements : un seul groupe `vg_sys` contenant tous les volumes.
+5. **Point d'attention :** l'instantané `avant-installation` a été pris avec un disque de 30 Gio. Un retour à cet instantané pourrait ramener le disque à son ancienne taille. Un nouvel instantané sera pris après l'installation.
+
+### Résultat
+- Installation de rhel9-lab : [à compléter : terminée / en cours]
+- Vérifications B.3 (`lsblk -f`, `df -hT`, `swapon --show`, `findmnt --target /var/log`, `vgs`) : [à compléter, sorties dans tp01/preuves/]
+- ubuntu24-lab : [à compléter : état]
+
+### Temps passé
+- [à compléter]
