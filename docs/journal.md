@@ -85,3 +85,30 @@ Schéma réalisé avec l'installateur Anaconda, en mode personnalisé, schéma L
 
 ### Temps passé
 - [à compléter]
+
+- ## Travail hors séance — 04/10/2026
+
+### Vérifications après installation de rhel9-lab
+- Connexion SSH depuis l'hôte Proxmox (192.168.2.1) vers rhel9-lab (192.168.2.20) avec le compte nominatif : OK
+- Réseau : `ens18` 192.168.2.20/24 et `ens19` 10.42.0.20/24, toutes deux UP. Une seule route par défaut, via 192.168.2.1 sur ens18
+- Partitionnement conforme au schéma (`lsblk -f`, `df -hT`, `swapon --show`, `findmnt`, `vgs`, `lvs`) : vg_sys avec 1 PV, 5 LV et 7 Gio libres, swap de 2 Gio actif, /var/log monté depuis vg_sys-lv_log
+- Système : Rocky Linux 9.8 (Blue Onyx), aucune unité en échec (`systemctl --failed`)
+- Locale fr_FR.UTF-8, clavier fr-oss, fuseau Europe/Paris, horloge synchronisée (NTP actif)
+
+### Mises à jour (C.4)
+- `sudo dnf -y update` : 104 paquets installés ou mis à jour, dont un nouveau noyau
+- `sudo dnf -y install epel-release` : dépôt EPEL activé (visible dans `dnf repolist`)
+- Redémarrage sur le nouveau noyau (5.14.0-687.10.1 → 5.14.0-687.54.1), puis `systemctl --failed` : aucune unité en échec
+- Remarque : l'installation a été réalisée en séance le 02/10 (entrée n°1 de `dnf history`), les mises à jour ont été appliquées le 04/10 hors séance (entrées n°2 et 3).
+
+### Incidents et corrections
+1. **Nom d'hôte resté à `localhost`** après l'installation : le nom saisi dans l'installateur n'a pas été appliqué. Correction : `sudo hostnamectl set-hostname`.
+2. **Faute de frappe dans le nom d'hôte** : `rhe19-lab` (chiffre 1) au lieu de `rhel9-lab` (lettre L), repérée dans le prompt. Corrigée avec la même commande et vérifiée avec `hostnamectl`.
+3. **Résolution DNS impossible** : `ping 1.1.1.1` répondait mais `ping rockylinux.org` échouait (« Nom ou service inconnu »). Diagnostic : NAT fonctionnel, aucun serveur DNS configuré. Correction : `nmcli connection modify ens18 ipv4.dns "1.1.1.1 9.9.9.9"` puis `nmcli connection up ens18`, vérification dans `/etc/resolv.conf`.
+4. **Image d'installation toujours attachée** à la VM après l'installation (`sr0` visible dans `lsblk`) : risque de redémarrer sur l'installateur. Correction dans Proxmox : lecteur CD/DVD passé à « Do not use any media ».
+
+### Instantané
+- `apres-installation` : [à compléter une fois pris]
+
+### Temps passé
+- [à compléter]
