@@ -17,7 +17,7 @@
 - Le schéma LVM imposé totalise 43 Gio pour des disques de 30/25 Gio : 25Gio
 
 ### Temps passé
--
+- 1h30
 
 ## Partie B.1 — Justification du partitionnement
 
