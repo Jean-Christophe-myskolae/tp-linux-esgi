@@ -212,6 +212,7 @@ Shell de l'hôte Proxmox (192.168.2.1), qui joint les deux serveurs sur le rése
 2. **Erreur de saisie** : nom complet de `mmbaya` créé avec la valeur littérale « Prénom Mbaya » sur Rocky, et laissé vide sur Ubuntu. Corrigé avec `usermod -c` (Rocky) et `chfn -f` (Ubuntu).
 3. **`sudo -n true` (commande du sujet) échoue** avec la configuration par défaut, car sudo exige un mot de passe. Choix de conserver le mot de passe sudo plutôt que d'ajouter `NOPASSWD` ; test réalisé avec `ssh -t … 'sudo true && echo delegation-ok'`.
 4. **Sur Ubuntu, le service SSH s'appelle `ssh`** et non `sshd` (`systemctl reload ssh`).
+5. **Preuves d'accès distant générées VMs éteintes** : tous les tests renvoyaient « No route to host », y compris pour le compte nominatif. Fichier écarté, VMs redémarrées, tests relancés : refus de root (`Permission denied`) et connexion par clé du compte nominatif OK.
 
 ### Instantané
 - `apres-partie-D` : [à compléter une fois pris]
