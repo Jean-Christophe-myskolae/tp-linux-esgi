@@ -116,9 +116,50 @@ Schéma réalisé avec l'installateur Anaconda, en mode personnalisé, schéma L
 ## Travail hors séance — 18/10/2026
 
 ### Partie A — Préparation de ubuntu24-lab (ID 201)
-- Vérification de la configuration avant installation dans Proxmox. Deux écarts constatés :
-  1. Disque créé à 25 Gio : insuffisant pour le schéma imposé (43 Gio). Agrandi à 50 Gio (Disk Action → Resize).
-  2. Une seule interface, sur vmbr2 VLAN 42 (lab-interne) : pas d'accès Internet. Ajout de l'interface NAT et remise dans le même ordre que rhel9-lab : `net0` → vmbr1 (NAT), `net1` → vmbr2 VLAN 42 (lab-interne).
-- VM arrêtée avant l'installation pour que l'installateur lise directement le disque à 50 Gio (leçon de l'incident sur rhel9-lab).
-- Instantané `avant-installation` supprimé puis refait après ces corrections, pour qu'un retour arrière restaure la bonne configuration.
-- Correction : la VM Rocky est nommée `rhe19-lab` dans Proxmox (chiffre 1 au lieu de la lettre L). Renommée `rhel9-lab`.
+Vérification de la configuration dans Proxmox avant l'installation :
+- Disque créé à 25 Gio, insuffisant pour le schéma imposé (43 Gio). Agrandi à 50 Gio (Disk Action → Resize), VM arrêtée.
+- Une seule interface, sur vmbr2 VLAN 42 (lab-interne) : pas d'accès Internet. Ajout de l'interface NAT (vmbr1).
+- Ordre final aligné sur rhel9-lab : `net0` → vmbr1 (NAT), `net1` → vmbr2 VLAN 42 (lab-interne).
+- Instantané `avant-installation` supprimé puis refait après ces corrections.
+- VM Rocky nommée `rhe19-lab` dans Proxmox (chiffre 1 au lieu de la lettre L) : renommée `rhel9-lab`.
+
+### Partie B — Partitionnement LVM (ubuntu24-lab, Ubuntu Server 24.04.3)
+Installateur Subiquity, option « Custom storage layout » :
+
+| Volume | Taille | Point de montage | Système de fichiers |
+|---|---|---|---|
+| sda1 | 1 Mio | — | BIOS grub spacer |
+| sda2 | 1 Gio | /boot | ext4 |
+| vg_sys-lv_root | 20 Gio | / | ext4 |
+| vg_sys-lv_var | 10 Gio | /var | ext4 |
+| vg_sys-lv_log | 5 Gio | /var/log | ext4 |
+| vg_sys-lv_home | 5 Gio | /home | ext4 |
+| vg_sys-lv_swap | 2 Gio | swap | swap |
+| Espace libre de vg_sys | ~7 Gio | — | réservé au TP 2 |
+
+- Table de partitions GPT avec démarrage BIOS : l'installateur ajoute une partition « BIOS grub spacer » de 1 Mio, nécessaire à GRUB. D'où 3 partitions sur Ubuntu contre 2 sur Rocky (table MSDOS).
+- Système de fichiers ext4 (défaut Ubuntu) au lieu de xfs sur Rocky. Agrandissement : `resize2fs` au lieu de `xfs_growfs` (ou `lvextend -r` dans les deux cas).
+- Contrairement à Anaconda, le groupe `vg_sys` occupe toute la partition dès sa création : l'espace libre reste à l'intérieur du groupe sans réglage particulier.
+
+### Partie C — Paramètres définis pendant l'installation
+- Profil : Ubuntu Server (minimized)
+- Nom d'hôte : `ubuntu24-lab`
+- Clavier : French
+- Réseau :
+  - `ens18` (NAT) : 192.168.2.21/24, passerelle 192.168.2.1, DNS 1.1.1.1 et 9.9.9.9
+  - `ens19` (lab-interne) : 10.42.0.21/24, sans passerelle ni DNS
+- Compte : `jcandelariasureta`, membre du groupe sudo (automatique sur Ubuntu)
+- Compte root : verrouillé par défaut sur Ubuntu
+- Serveur OpenSSH installé pendant l'installation
+
+### Incidents et corrections
+1. **Disque à 25 Gio et une seule interface réseau** : détecté par vérification de l'onglet Hardware avant l'installation. Corrigé (voir partie A).
+2. **Interfaces dans l'ordre inverse de rhel9-lab** : `ens18` était sur lab-interne. Détecté sur l'écran réseau de l'installateur grâce à l'adresse MAC. Corrigé dans Proxmox avant l'installation, instantané refait.
+3. **Partitionnement guidé par défaut** (« Use an entire disk ») : l'installateur a créé son propre groupe de volumes avec un seul volume, non conforme. Détecté sur l'écran de profil. Installation interrompue, retour à l'instantané `avant-installation`, puis reprise avec « Custom storage layout ».
+
+### Résultat
+- Installation de ubuntu24-lab : [à compléter]
+- Vérifications après installation : [à compléter, sorties dans tp01/preuves/]
+
+### Temps passé
+- [à compléter]
