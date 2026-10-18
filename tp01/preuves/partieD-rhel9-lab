@@ -1,0 +1,56 @@
+=== MACHINE : rhel9-lab — PARTIE D ===
+=== DATE : 2026-10-18T19:16:44+02:00 ===
+
+$ sudo passwd -S root
+root LK 1969-12-31 0 99999 7 -1 (Mot de passe verrouillé.)
+(sortie reprise du terminal : passwd -S n'écrit rien quand sa sortie est redirigée vers un fichier sur Rocky)
+
+$ sudo lslogins root | grep -E "^Nom d'utilisateur|verrouillé|empty"
+Nom d'utilisateur:                  root
+Le mot de passe est verrouillé:    yes
+Password not required (empty):      yes
+
+$ id jcandelariasureta
+uid=1000(jcandelariasureta) gid=1000(jcandelariasureta) groupes=1000(jcandelariasureta),10(wheel)
+
+$ id mmbaya
+uid=1001(mmbaya) gid=1001(mmbaya) groupes=1001(mmbaya),10(wheel)
+
+$ id asarambounou
+uid=1002(asarambounou) gid=1002(asarambounou) groupes=1002(asarambounou),10(wheel)
+
+$ getent passwd jcandelariasureta mmbaya asarambounou
+jcandelariasureta:x:1000:1000:Jean-Christophe Candelaria Sureta:/home/jcandelariasureta:/bin/bash
+mmbaya:x:1001:1001:Mbaya:/home/mmbaya:/bin/bash
+asarambounou:x:1002:1002:Adama Sarambounou:/home/asarambounou:/bin/bash
+
+$ sudo -l
+L'utilisateur jcandelariasureta peut utiliser les
+        commandes suivantes sur rhel9-lab :
+    (ALL) ALL
+
+$ sudo cat /etc/ssh/sshd_config.d/00-tp01-durcissement.conf
+PermitRootLogin no
+
+$ sudo sshd -T | grep -Ei 'permitrootlogin|passwordauthentication'
+permitrootlogin no
+passwordauthentication yes
+
+$ sudo firewall-cmd --state
+running
+
+$ sudo firewall-cmd --list-all
+public (active)
+  target: default
+  icmp-block-inversion: no
+  interfaces: ens18 ens19
+  sources: 
+  services: ssh
+  ports: 
+  protocols: 
+  forward: yes
+  masquerade: no
+  forward-ports: 
+  source-ports: 
+  icmp-blocks: 
+  rich rules:
