@@ -1,0 +1,46 @@
+=== MACHINE : ubuntu24-lab — PARTIE D ===
+=== DATE : 2026-10-18T19:19:27+02:00 ===
+
+$ sudo passwd -S root
+root L 2025-08-05 0 99999 7 -1
+
+$ id jcandelariasureta
+uid=1000(jcandelariasureta) gid=1000(jcandelariasureta) groups=1000(jcandelariasureta),4(adm),24(cdrom),27(sudo),30(dip),46(plugdev),101(lxd)
+
+$ id mmbaya
+uid=1001(mmbaya) gid=1001(mmbaya) groups=1001(mmbaya),27(sudo),100(users)
+
+$ id asarambounou
+uid=1002(asarambounou) gid=1002(asarambounou) groups=1002(asarambounou),27(sudo),100(users)
+
+$ getent passwd jcandelariasureta mmbaya asarambounou
+jcandelariasureta:x:1000:1000:Jean-Christophe Candelaria Sureta:/home/jcandelariasureta:/bin/bash
+mmbaya:x:1001:1001:Mbaya,,,:/home/mmbaya:/bin/bash
+asarambounou:x:1002:1002:Adama Sarambounou,,,:/home/asarambounou:/bin/bash
+
+$ sudo -l
+Matching Defaults entries for jcandelariasureta on ubuntu24-lab:
+    env_reset, mail_badpass,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin,
+    use_pty
+
+User jcandelariasureta may run the following commands on ubuntu24-lab:
+    (ALL : ALL) ALL
+
+$ sudo cat /etc/ssh/sshd_config.d/00-tp01-durcissement.conf
+PermitRootLogin no
+
+$ sudo sshd -T | grep -Ei 'permitrootlogin|passwordauthentication'
+permitrootlogin no
+passwordauthentication yes
+
+$ sudo ufw status verbose
+Status: active
+Logging: on (low)
+Default: deny (incoming), allow (outgoing), disabled (routed)
+New profiles: skip
+
+To                         Action      From
+--                         ------      ----
+22/tcp (OpenSSH)           ALLOW IN    Anywhere                  
+22/tcp (OpenSSH (v6))      ALLOW IN    Anywhere (v6)
