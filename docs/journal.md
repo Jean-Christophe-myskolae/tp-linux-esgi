@@ -112,3 +112,13 @@ Schéma réalisé avec l'installateur Anaconda, en mode personnalisé, schéma L
 
 ### Temps passé
 - 1h30
+
+## Travail hors séance — 18/10/2026
+
+### Partie A — Préparation de ubuntu24-lab (ID 201)
+- Vérification de la configuration avant installation dans Proxmox. Deux écarts constatés :
+  1. Disque créé à 25 Gio : insuffisant pour le schéma imposé (43 Gio). Agrandi à 50 Gio (Disk Action → Resize).
+  2. Une seule interface, sur vmbr2 VLAN 42 (lab-interne) : pas d'accès Internet. Ajout de l'interface NAT et remise dans le même ordre que rhel9-lab : `net0` → vmbr1 (NAT), `net1` → vmbr2 VLAN 42 (lab-interne).
+- VM arrêtée avant l'installation pour que l'installateur lise directement le disque à 50 Gio (leçon de l'incident sur rhel9-lab).
+- Instantané `avant-installation` supprimé puis refait après ces corrections, pour qu'un retour arrière restaure la bonne configuration.
+- Correction : la VM Rocky est nommée `rhe19-lab` dans Proxmox (chiffre 1 au lieu de la lettre L). Renommée `rhel9-lab`.
