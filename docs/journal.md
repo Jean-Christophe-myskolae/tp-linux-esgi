@@ -84,7 +84,7 @@ Schéma réalisé avec l'installateur Anaconda, en mode personnalisé, schéma L
 - ubuntu24-lab : [à compléter : état]
 
 ### Temps passé
-- [à compléter]
+- 1h30
 
 - ## Travail hors séance — 04/10/2026
 
@@ -162,4 +162,59 @@ Installateur Subiquity, option « Custom storage layout » :
 - Vérifications après installation : [à compléter, sorties dans tp01/preuves/]
 
 ### Temps passé
-- [à compléter]
+- 1h30
+
+- ## Partie D — Comptes d'administration et premier durcissement (18/10/2026)
+
+### Poste d'administration
+Shell de l'hôte Proxmox (192.168.2.1), qui joint les deux serveurs sur le réseau NAT (192.168.2.20 et 192.168.2.21).
+
+### D.1 — Compte root
+- `sudo passwd -l root` puis `sudo passwd -S root` sur les deux machines.
+- Résultat : `LK` sur rhel9-lab, `L` sur ubuntu24-lab (même état, notation différente selon la distribution).
+- root était déjà inutilisable après installation (désactivé dans Anaconda sur Rocky, verrouillé par défaut sur Ubuntu) ; le verrouillage a été rendu explicite.
+
+### D.2 — Comptes nominatifs et délégation
+- Un compte par membre du groupe sur les deux machines : `jcandelariasureta`, `mmbaya`, `asarambounou`.
+- Rocky : `useradd -m -c "Nom" compte`, `passwd compte`, `usermod -aG wheel compte`.
+- Ubuntu : `adduser compte` (interactif, ajoute aussi le compte au groupe `users`), puis `usermod -aG sudo compte`.
+- Délégation uniquement par le groupe prévu par la distribution : `wheel` (GID 10) sur Rocky, `sudo` (GID 27) sur Ubuntu. Aucune modification d'identifiant : UID 1000, 1001 et 1002.
+- Observation : un ajout à un groupe n'est effectif qu'après reconnexion de l'utilisateur.
+
+### D.3 — Accès distant par clé
+- Clé ed25519 générée sur le poste d'administration, protégée par une phrase de passe :
+  `ssh-keygen -t ed25519 -a 100 -C "jcandelariasureta@lab" -f ~/.ssh/id_ed25519_lab`
+  Empreinte : `SHA256:jPLszx799SSw/Ge/97nTl7kqVDlsDl6MKdFkrDo2wEQ`. Nom de fichier dédié pour ne pas écraser les clés propres à Proxmox.
+- Clé publique déployée avec `ssh-copy-id -i ~/.ssh/id_ed25519_lab.pub` sur le compte `jcandelariasureta` des deux serveurs.
+- Test : la phrase de passe de la clé est demandée (et non le mot de passe du compte), `sudo -l` affiche `(ALL) ALL` sur Rocky et `(ALL : ALL) ALL` sur Ubuntu, puis `delegation-ok` sur les deux.
+- À faire par chaque membre : générer sa propre clé sur son poste et la déployer sur son compte.
+
+### D.4 — Connexion distante de root interdite
+- Constat initial sur les deux machines : `permitrootlogin without-password` (valeur par défaut d'OpenSSH : root autorisé par clé uniquement). Fichiers présents dans `/etc/ssh/sshd_config.d/` : `50-redhat.conf` sur Rocky, `50-cloud-init.conf` sur Ubuntu ; aucun ne règle `PermitRootLogin`.
+- Ajout du fichier `/etc/ssh/sshd_config.d/00-tp01-durcissement.conf` contenant `PermitRootLogin no` :
+  - fichier séparé, pour un retour arrière simple (il suffit de le supprimer) ;
+  - préfixe `00-`, car sshd lit les fichiers par ordre alphabétique et retient la première valeur trouvée.
+- `sudo sshd -t` (validation de la syntaxe) avant rechargement, puis `systemctl reload sshd` sur Rocky et `systemctl reload ssh` sur Ubuntu.
+- Configuration effective (`sshd -T`) : `permitrootlogin no` sur les deux. `passwordauthentication yes` conservé volontairement (traité au TP 6).
+- Test réel depuis le poste d'administration : `ssh -o BatchMode=yes root@…` → `Permission denied`, code retour 255 sur les deux ; le compte nominatif reste accessible.
+- root n'ayant aucune clé autorisée, le refus seul ne prouve pas la règle : la preuve combine la configuration effective (`sshd -T`) et le test de connexion.
+- Session d'origine conservée ouverte pendant toute la modification (règle de survie du module).
+
+### D.5 — Pare-feu local
+- rhel9-lab (firewalld) : déjà actif après installation, zone `public` sur ens18 et ens19, avec les services `ssh`, `cockpit` et `dhcpv6-client`. Fermeture de `cockpit` (interface web d'administration, inutilisée) et de `dhcpv6-client` (adressage IPv4 fixe), avec `--permanent` puis `--reload`. Seul `ssh` reste ouvert.
+- ubuntu24-lab (ufw) : inactif après installation. `ufw allow OpenSSH` **avant** `ufw enable`, pour ne pas couper l'accès. Politique : refus en entrée, autorisation en sortie, seul 22/tcp autorisé (IPv4 et IPv6). Activé au démarrage.
+- Vérification par une **nouvelle** connexion depuis le poste d'administration : OK sur les deux (une session déjà ouverte ne prouve rien).
+- Port 9090 de rhel9-lab testé depuis le poste d'administration : rejeté (`No route to host` = réponse de rejet de firewalld).
+- Test depuis une autre machine : ubuntu24-lab → rhel9-lab via lab-interne (10.42.0.20), ping et SSH OK. Confirme le fonctionnement du réseau interne et l'ouverture SSH du pare-feu de Rocky.
+
+### Incidents et observations
+1. **Capture de `passwd -S root` vide sur Rocky** : la commande n'écrit rien quand sa sortie est redirigée vers un fichier. Sortie reprise du terminal et confirmée par `lslogins root` (« Le mot de passe est verrouillé : yes »). Le champ « Password not required (empty) : yes » s'explique par l'absence de mot de passe root depuis l'installation ; le verrou empêche toute connexion par mot de passe.
+2. **Erreur de saisie** : nom complet de `mmbaya` créé avec la valeur littérale « Prénom Mbaya » sur Rocky, et laissé vide sur Ubuntu. Corrigé avec `usermod -c` (Rocky) et `chfn -f` (Ubuntu).
+3. **`sudo -n true` (commande du sujet) échoue** avec la configuration par défaut, car sudo exige un mot de passe. Choix de conserver le mot de passe sudo plutôt que d'ajouter `NOPASSWD` ; test réalisé avec `ssh -t … 'sudo true && echo delegation-ok'`.
+4. **Sur Ubuntu, le service SSH s'appelle `ssh`** et non `sshd` (`systemctl reload ssh`).
+
+### Instantané
+- `apres-partie-D` : [à compléter une fois pris]
+
+### Temps passé
+- 1h30
