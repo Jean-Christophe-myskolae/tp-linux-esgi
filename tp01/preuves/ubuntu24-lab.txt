@@ -1,0 +1,103 @@
+=== MACHINE : ubuntu24-lab ===
+=== DATE : 2026-10-18T18:00:13+02:00 ===
+
+$ hostnamectl
+ Static hostname: ubuntu24-lab
+       Icon name: computer-vm
+         Chassis: vm 🖴
+      Machine ID: b7b837cbcf534219a01f235763ad5eda
+         Boot ID: 174af0f947fc42eea06744ed06561b5b
+  Virtualization: kvm
+Operating System: Ubuntu 24.04.5 LTS
+          Kernel: Linux 6.8.0-147-generic
+    Architecture: x86-64
+ Hardware Vendor: QEMU
+  Hardware Model: Standard PC _i440FX + PIIX, 1996_
+Firmware Version: rel-1.16.3-0-ga6ed6b701f0a-prebuilt.qemu.org
+   Firmware Date: Tue 2014-04-01
+    Firmware Age: 12y 6month 2w 4d
+
+$ cat /etc/os-release
+PRETTY_NAME="Ubuntu 24.04.5 LTS"
+NAME="Ubuntu"
+VERSION_ID="24.04"
+VERSION="24.04.5 LTS (Noble Numbat)"
+VERSION_CODENAME=noble
+ID=ubuntu
+ID_LIKE=debian
+HOME_URL="https://www.ubuntu.com/"
+SUPPORT_URL="https://help.ubuntu.com/"
+BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
+PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
+UBUNTU_CODENAME=noble
+LOGO=ubuntu-logo
+
+$ uname -r
+6.8.0-147-generic
+
+$ systemctl --failed
+  UNIT LOAD ACTIVE SUB DESCRIPTION
+
+0 loaded units listed.
+
+$ localectl status
+System Locale: LANG=fr_FR.UTF-8
+    VC Keymap: (unset)
+   X11 Layout: fr
+    X11 Model: pc105
+  X11 Variant: latin9
+
+$ timedatectl status
+               Local time: dim. 2026-10-18 18:00:13 CEST
+           Universal time: dim. 2026-10-18 16:00:13 UTC
+                 RTC time: dim. 2026-10-18 16:00:13
+                Time zone: Europe/Paris (CEST, +0200)
+System clock synchronized: yes
+              NTP service: active
+          RTC in local TZ: no
+
+$ timedatectl timesync-status
+       Server: 185.125.190.57 (ntp.ubuntu.com)
+Poll interval: 2min 8s (min: 32s; max 34min 8s)
+         Leap: normal
+      Version: 4
+      Stratum: 2
+    Reference: 1D586304
+    Precision: 1us (-25)
+Root distance: 4.080ms (max: 5s)
+       Offset: -1.181ms
+        Delay: 12.211ms
+       Jitter: 1.207ms
+ Packet count: 3
+    Frequency: -3,258ppm
+
+$ ip -br a
+lo               UNKNOWN        127.0.0.1/8 ::1/128 
+ens18            UP             192.168.2.21/24 fe80::be24:11ff:fe80:81e0/64 
+ens19            UP             10.42.0.21/24 fe80::be24:11ff:fe8a:65cc/64 
+
+$ ip route
+default via 192.168.2.1 dev ens18 proto static 
+10.42.0.0/24 dev ens19 proto kernel scope link src 10.42.0.21 
+192.168.2.0/24 dev ens18 proto kernel scope link src 192.168.2.21 
+
+$ resolvectl status ens18
+Link 2 (ens18)
+    Current Scopes: DNS
+         Protocols: +DefaultRoute -LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
+Current DNS Server: 1.1.1.1
+       DNS Servers: 1.1.1.1 9.9.9.9
+
+$ grep -E '^(Start-Date|Commandline)' /var/log/apt/history.log | grep -A1 'Start-Date: 2026'
+Start-Date: 2026-10-18  13:02:34
+Commandline: apt-get --quiet --assume-yes --option=Dpkg::options::=--force-unsafe-io --option=Dpkg::Options::=--force-confold install grub-pc
+Start-Date: 2026-10-18  13:03:26
+Commandline: apt-get --quiet --assume-yes --option=Dpkg::options::=--force-unsafe-io --option=Dpkg::Options::=--force-confold install linux-generic
+Start-Date: 2026-10-18  13:04:17
+Commandline: apt-get --quiet --assume-yes --option=Dpkg::options::=--force-unsafe-io --option=Dpkg::Options::=--force-confold install openssh-server
+Start-Date: 2026-10-18  13:06:52
+Commandline: /usr/bin/unattended-upgrades -v
+Start-Date: 2026-10-18  17:52:51
+Commandline: apt -y full-upgrade
+Start-Date: 2026-10-18  17:55:46
+Commandline: apt -y autoremove
