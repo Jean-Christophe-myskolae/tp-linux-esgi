@@ -1,0 +1,25 @@
+root@proxmox-jc:~# cat ~/preuves-acces-distant.txt
+=== POSTE D'ADMINISTRATION : proxmox-jc ===
+=== DATE : 2026-10-18T19:18:41+02:00 ===
+
+$ ssh -o BatchMode=yes root@192.168.2.20 true
+root@192.168.2.20: Permission denied (publickey,gssapi-keyex,gssapi-with-mic,password).
+code retour : 255
+
+$ ssh -i ~/.ssh/id_ed25519_lab jcandelariasureta@192.168.2.20 'hostname; echo connexion-cle-ok'
+rhel9-lab
+connexion-cle-ok
+
+$ ssh -o BatchMode=yes root@192.168.2.21 true
+root@192.168.2.21: Permission denied (publickey,password).
+code retour : 255
+
+$ ssh -i ~/.ssh/id_ed25519_lab jcandelariasureta@192.168.2.21 'hostname; echo connexion-cle-ok'
+ubuntu24-lab
+connexion-cle-ok
+
+$ test du port 9090 (cockpit) sur rhel9-lab
+bash: connect: No route to host
+bash: line 1: /dev/tcp/192.168.2.20/9090: No route to host
+9090 bloqué
+root@proxmox-jc:~# 
